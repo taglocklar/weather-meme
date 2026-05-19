@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Weather Meme">
+  <defs>
+    <linearGradient id="sky" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#eaffff"/>
+      <stop offset="0.48" stop-color="#8eeaff"/>
+      <stop offset="1" stop-color="#49b8ff"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="23" y1="9" x2="43" y2="31" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff7a8"/>
+      <stop offset="1" stop-color="#ffb23f"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#sky)"/>
+  <circle cx="39" cy="22" r="12" fill="url(#sun)"/>
+  <path fill="#fff" stroke="#0a4664" stroke-width="3" stroke-linejoin="round" d="M19 45h28c5.5 0 10-4 10-9.2 0-4.9-4-8.9-9.1-9.2A14 14 0 0 0 21.3 23 10.8 10.8 0 0 0 19 45Z"/>
+  <circle cx="29" cy="34" r="2.5" fill="#0a4664"/>
+  <circle cx="43" cy="34" r="2.5" fill="#0a4664"/>
+  <path d="M31 41c2.7 2.1 7.3 2.1 10 0" fill="none" stroke="#0a4664" stroke-width="3" stroke-linecap="round"/>
+  <path d="M9 15h8M13 11v8" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".9"/>
+</svg>
