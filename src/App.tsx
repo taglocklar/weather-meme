@@ -297,8 +297,11 @@ function App() {
       )}
 
       <a className="memelord-powered-badge" href="https://www.memelord.com" target="_blank" rel="noreferrer">
-        <span aria-hidden="true">⚡</span>
-        powered by memelord
+        <span className="memelord-powered-title">weathermeme.exe</span>
+        <span className="memelord-powered-body">
+          <span aria-hidden="true">⚡</span>
+          powered by memelord
+        </span>
       </a>
     </main>
   )
