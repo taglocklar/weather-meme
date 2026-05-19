@@ -90,6 +90,61 @@ button:disabled {
   color: #2c6578;
 }
 
+.progress {
+  max-width: 420px;
+  margin-top: 16px;
+}
+
+.progress-track {
+  height: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.56);
+  box-shadow: inset 0 1px 3px rgba(6, 64, 92, 0.12);
+}
+
+.progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #64d7ff, #1570a6);
+  box-shadow: 0 0 16px rgba(57, 182, 255, 0.64);
+  transition: width 320ms ease;
+}
+
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 9px 0 0;
+  padding: 0;
+  color: #5f8796;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  list-style: none;
+  text-transform: uppercase;
+}
+
+.progress-steps li {
+  opacity: 0.58;
+}
+
+.progress-steps li.active,
+.progress-steps li.done {
+  color: #06405c;
+  opacity: 1;
+}
+
+.progress-steps li.active::after {
+  content: ' ...';
+}
+
+.progress-steps li.done::after {
+  content: ' ✓';
+}
+
 .weather-card {
   max-width: 760px;
   margin: 18px auto 0;

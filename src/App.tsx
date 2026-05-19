@@ -36,6 +36,8 @@ type LocationSnapshot = {
   country: string
 }
 
+type ProgressStep = 'idle' | 'location' | 'weather' | 'meme'
+
 const weatherCodeLabels: Record<number, string> = {
   0: 'clear sky',
   1: 'mainly clear',
@@ -187,6 +189,7 @@ function App() {
   const [prompt, setPrompt] = useState('')
   const [status, setStatus] = useState('Ready for the forecast orb.')
   const [isLoading, setIsLoading] = useState(false)
+  const [progressStep, setProgressStep] = useState<ProgressStep>('idle')
 
   async function handleGenerate() {
     if (!navigator.geolocation) {
@@ -195,14 +198,19 @@ function App() {
     }
 
     setIsLoading(true)
+    setProgressStep('location')
     setMeme(null)
     setPrompt('')
     setStatus('Finding your local sky vibes...')
 
     try {
       const position = await getPosition()
+      setProgressStep('weather')
+      setStatus('Checking the forecast...')
+
       const snapshot = await getWeather(position.coords.latitude, position.coords.longitude)
       setWeather(snapshot)
+      setProgressStep('meme')
       setStatus(`${snapshot.city} weather found. Asking Memelord for one reaction meme...`)
 
       const result = await generateMeme(snapshot)
@@ -215,10 +223,12 @@ function App() {
       setStatus(error instanceof Error ? error.message : 'Something went wrong.')
     } finally {
       setIsLoading(false)
+      setProgressStep('idle')
     }
   }
 
   const mood = weather ? moodCopy[weather.mood] : null
+  const progressValue = progressStep === 'location' ? 33 : progressStep === 'weather' ? 66 : progressStep === 'meme' ? 92 : 0
 
   return (
     <main className="app-shell">
@@ -242,6 +252,19 @@ function App() {
         <p className="status" role="status">
           {status}
         </p>
+
+        {isLoading && (
+          <div className="progress" aria-label="Weather meme progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressValue} role="progressbar">
+            <div className="progress-track">
+              <span style={{ width: `${progressValue}%` }} />
+            </div>
+            <ol className="progress-steps">
+              <li className={progressStep === 'location' ? 'active' : progressStep === 'weather' || progressStep === 'meme' ? 'done' : ''}>Location</li>
+              <li className={progressStep === 'weather' ? 'active' : progressStep === 'meme' ? 'done' : ''}>Weather</li>
+              <li className={progressStep === 'meme' ? 'active' : ''}>Meme</li>
+            </ol>
+          </div>
+        )}
       </section>
 
       {weather && mood && (
