@@ -295,6 +295,11 @@ function App() {
           {meme.template_name && <figcaption>{meme.template_name}</figcaption>}
         </figure>
       )}
+
+      <a className="memelord-powered-badge" href="https://www.memelord.com" target="_blank" rel="noreferrer">
+        <span aria-hidden="true">⚡</span>
+        powered by memelord
+      </a>
     </main>
   )
 }
