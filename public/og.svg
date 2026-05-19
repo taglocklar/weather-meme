@@ -23,11 +23,9 @@
     <rect x="76" y="76" width="1048" height="478" rx="52" fill="#ffffff" fill-opacity="0.76" stroke="#ffffff" stroke-width="3"/>
   </g>
 
-  <text x="126" y="168" fill="#1570a6" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="34" font-weight="800" letter-spacing="7">WEATHERMEME.APP</text>
-  <text x="122" y="278" fill="#063f5c" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="70" font-weight="900">Your forecast</text>
-  <text x="122" y="356" fill="#063f5c" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="70" font-weight="900">gets memed.</text>
-  <text x="128" y="432" fill="#24576a" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="31" font-weight="600">Weather in. Memelord meme out.</text>
-  <text x="128" y="496" fill="#1570a6" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="25" font-weight="800">powered by Memelord</text>
+  <text x="126" y="178" fill="#1570a6" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="34" font-weight="800" letter-spacing="7">WEATHERMEME.APP</text>
+  <text x="122" y="318" fill="#063f5c" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="92" font-weight="900">Weather Meme</text>
+  <text x="128" y="408" fill="#24576a" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="38" font-weight="700">Meme reaction out.</text>
 
   <g transform="translate(925 324) scale(.72)">
     <path fill="#fff" stroke="#0a4664" stroke-width="12" stroke-linejoin="round" d="M-146 172h256c53 0 96-38 96-87 0-47-38-84-87-87A128 128 0 0 0-125-33a101 101 0 0 0-21 205Z"/>
