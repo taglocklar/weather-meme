@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { type FormEvent, useState } from 'react'
 import './App.css'
 
 type WeatherMood = 'good' | 'bad' | 'mixed'
@@ -36,6 +36,11 @@ type LocationSnapshot = {
   country: string
 }
 
+type NamedLocation = LocationSnapshot & {
+  latitude: number
+  longitude: number
+}
+
 type ProgressStep = 'idle' | 'location' | 'weather' | 'meme'
 
 const weatherCodeLabels: Record<number, string> = {
@@ -61,6 +66,8 @@ const weatherCodeLabels: Record<number, string> = {
   96: 'thunderstorm with hail',
   99: 'heavy thunderstorm with hail',
 }
+
+const suggestedLocations = ['New York', 'London', 'Tokyo', 'Miami', 'Paris', 'Sydney']
 
 const moodCopy: Record<WeatherMood, { label: string; emoji: string; line: string }> = {
   good: {
@@ -88,6 +95,11 @@ function getPosition(): Promise<GeolocationPosition> {
       maximumAge: 300000,
     })
   })
+}
+
+function formatLocationName(location: LocationSnapshot) {
+  const region = location.region && location.region.toLowerCase() !== location.city.toLowerCase() ? location.region : ''
+  return [location.city, region || location.country].filter(Boolean).join(', ')
 }
 
 function getWeatherMood(code: number, temperature: number, windSpeed: number, precipitation: number): WeatherMood {
@@ -125,7 +137,37 @@ async function getLocationName(latitude: number, longitude: number): Promise<Loc
   }
 }
 
-async function getWeather(latitude: number, longitude: number): Promise<WeatherSnapshot> {
+async function searchLocation(query: string): Promise<NamedLocation> {
+  const params = new URLSearchParams({
+    name: query,
+    count: '1',
+    language: 'en',
+    format: 'json',
+  })
+
+  const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${params}`)
+
+  if (!response.ok) {
+    throw new Error('Could not search for that location.')
+  }
+
+  const data = await response.json()
+  const place = data.results?.[0]
+
+  if (!place) {
+    throw new Error('No matching location found. Try a city name like Tokyo or Miami.')
+  }
+
+  return {
+    latitude: Number(place.latitude),
+    longitude: Number(place.longitude),
+    city: place.name || query,
+    region: place.admin1 || '',
+    country: place.country || '',
+  }
+}
+
+async function getWeather(latitude: number, longitude: number, knownLocation?: LocationSnapshot): Promise<WeatherSnapshot> {
   const params = new URLSearchParams({
     latitude: String(latitude),
     longitude: String(longitude),
@@ -137,7 +179,7 @@ async function getWeather(latitude: number, longitude: number): Promise<WeatherS
 
   const [weatherResponse, location] = await Promise.all([
     fetch(`https://api.open-meteo.com/v1/forecast?${params}`),
-    getLocationName(latitude, longitude),
+    knownLocation ? Promise.resolve(knownLocation) : getLocationName(latitude, longitude),
   ])
 
   if (!weatherResponse.ok) {
@@ -187,9 +229,28 @@ function App() {
   const [weather, setWeather] = useState<WeatherSnapshot | null>(null)
   const [meme, setMeme] = useState<MemeResult | null>(null)
   const [prompt, setPrompt] = useState('')
-  const [status, setStatus] = useState('Ready for the forecast orb.')
+  const [status, setStatus] = useState('Use your weather or pick a city.')
   const [isLoading, setIsLoading] = useState(false)
   const [progressStep, setProgressStep] = useState<ProgressStep>('idle')
+  const [locationQuery, setLocationQuery] = useState('')
+
+  function resetMemeState() {
+    setMeme(null)
+    setPrompt('')
+  }
+
+  async function finishMeme(snapshot: WeatherSnapshot) {
+    setWeather(snapshot)
+    setProgressStep('meme')
+    setStatus(`${snapshot.city} weather found. Asking Memelord for one reaction meme...`)
+
+    const result = await generateMeme(snapshot)
+    const firstMeme = result.results?.find((item) => item.url)
+
+    setPrompt(result.prompt ?? '')
+    setMeme(firstMeme ?? null)
+    setStatus(firstMeme ? 'Meme generated.' : 'Memelord responded, but no meme URL came back.')
+  }
 
   async function handleGenerate() {
     if (!navigator.geolocation) {
@@ -199,8 +260,7 @@ function App() {
 
     setIsLoading(true)
     setProgressStep('location')
-    setMeme(null)
-    setPrompt('')
+    resetMemeState()
     setStatus('Finding your local sky vibes...')
 
     try {
@@ -209,16 +269,37 @@ function App() {
       setStatus('Checking the forecast...')
 
       const snapshot = await getWeather(position.coords.latitude, position.coords.longitude)
-      setWeather(snapshot)
-      setProgressStep('meme')
-      setStatus(`${snapshot.city} weather found. Asking Memelord for one reaction meme...`)
+      await finishMeme(snapshot)
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Something went wrong.')
+    } finally {
+      setIsLoading(false)
+      setProgressStep('idle')
+    }
+  }
 
-      const result = await generateMeme(snapshot)
-      const firstMeme = result.results?.find((item) => item.url)
+  async function handleLocationSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const query = locationQuery.trim()
 
-      setPrompt(result.prompt ?? '')
-      setMeme(firstMeme ?? null)
-      setStatus(firstMeme ? 'Meme generated.' : 'Memelord responded, but no meme URL came back.')
+    if (!query) {
+      setStatus('Type a city first, then we can meme its weather.')
+      return
+    }
+
+    setIsLoading(true)
+    setProgressStep('location')
+    resetMemeState()
+    setStatus(`Finding ${query}...`)
+
+    try {
+      const selectedLocation = await searchLocation(query)
+      setLocationQuery(formatLocationName(selectedLocation))
+      setProgressStep('weather')
+      setStatus(`Checking ${selectedLocation.city} weather...`)
+
+      const snapshot = await getWeather(selectedLocation.latitude, selectedLocation.longitude, selectedLocation)
+      await finishMeme(snapshot)
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Something went wrong.')
     } finally {
@@ -242,10 +323,34 @@ function App() {
         <p className="eyebrow">How&apos;s the weather? 🐠</p>
         <h1 id="page-title">Your city&apos;s forecast becomes a meme.</h1>
         <p className="lede">
-          We pull your city, check the weather, decide if it&apos;s good or cursed, then make a Memelord reaction meme.
+          Use your location or pick any city. We check the weather, judge the vibes, then make a Memelord reaction meme.
         </p>
 
-        <button type="button" onClick={handleGenerate} disabled={isLoading}>
+        <form className="location-form" onSubmit={handleLocationSubmit}>
+          <label htmlFor="location">Pick a place</label>
+          <div className="location-controls">
+            <input
+              id="location"
+              name="location"
+              type="search"
+              list="location-suggestions"
+              placeholder="Try Tokyo, Lagos, or Miami"
+              value={locationQuery}
+              onChange={(event) => setLocationQuery(event.target.value)}
+              disabled={isLoading}
+            />
+            <datalist id="location-suggestions">
+              {suggestedLocations.map((location) => (
+                <option key={location} value={location} />
+              ))}
+            </datalist>
+            <button type="submit" disabled={isLoading}>
+              {isLoading ? 'Working...' : 'Meme this place'}
+            </button>
+          </div>
+        </form>
+
+        <button type="button" className="current-location-button" onClick={handleGenerate} disabled={isLoading}>
           {isLoading ? 'Consulting the weather orb...' : 'Use my weather ✨'}
         </button>
 
@@ -330,3 +435,4 @@ function App() {
 }
 
 export default App
+
