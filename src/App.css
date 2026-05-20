@@ -288,9 +288,9 @@ button:disabled {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin: 22px 0 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 28px 0 0;
 }
 
 .stats div {
@@ -391,18 +391,27 @@ button:disabled {
   bottom: 70px;
 }
 
-.memelord-popup {
+.memelord-popup-backdrop {
   position: fixed;
-  right: 18px;
-  bottom: 78px;
-  z-index: 20;
-  width: min(320px, calc(100vw - 32px));
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(6, 64, 92, 0.28);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+}
+
+.memelord-popup {
+  position: relative;
+  width: min(360px, 100%);
   border: 1px solid rgba(255, 255, 255, 0.82);
   border-radius: 24px;
-  padding: 18px;
+  padding: 22px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(211, 249, 255, 0.9));
   box-shadow:
-    0 18px 48px rgba(6, 64, 92, 0.24),
+    0 24px 70px rgba(6, 64, 92, 0.34),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
@@ -543,12 +552,6 @@ code {
     bottom: 8px;
     justify-content: flex-end;
     filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, 0.35));
-  }
-
-  .memelord-popup {
-    right: 10px;
-    bottom: 62px;
-    width: min(300px, calc(100vw - 20px));
   }
 
   .memelord-powered-stamp:hover {

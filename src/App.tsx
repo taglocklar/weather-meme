@@ -6,6 +6,8 @@ type WeatherMood = 'good' | 'bad' | 'mixed'
 type WeatherSnapshot = {
   temperature: number
   feelsLike: number
+  high: number
+  low: number
   windSpeed: number
   precipitation: number
   code: number
@@ -70,6 +72,10 @@ const weatherCodeLabels: Record<number, string> = {
 
 const suggestedLocations = ['New York', 'London', 'Tokyo', 'Miami', 'Paris', 'Sydney']
 
+const usStateAbbreviations: Record<string, string> = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi', MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire', NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina', SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia', WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming', DC: 'District of Columbia',
+}
+
 const moodCopy: Record<WeatherMood, { label: string; emoji: string; line: string }> = {
   good: {
     label: 'good weather detected',
@@ -103,14 +109,58 @@ function formatLocationName(location: LocationSnapshot) {
   return [location.city, region || location.country].filter(Boolean).join(', ')
 }
 
-function getWeatherMood(code: number, temperature: number, windSpeed: number, precipitation: number): WeatherMood {
-  const isStormy = code >= 61 || precipitation > 0.04 || windSpeed >= 25
-  const isGrossTemp = temperature <= 45 || temperature >= 94
-  const isNiceTemp = temperature >= 62 && temperature <= 84
-  const isClearish = code <= 2 && precipitation === 0 && windSpeed < 18
+function parseLocationQuery(query: string) {
+  const normalized = query.replace(/,/g, ' ').replace(/\s+/g, ' ').trim()
+  const parts = normalized.split(' ')
+  const lastPart = parts.at(-1)?.toUpperCase()
+  const regionHint = lastPart ? usStateAbbreviations[lastPart] : ''
 
-  if (isStormy || isGrossTemp) return 'bad'
-  if (isClearish && isNiceTemp) return 'good'
+  return {
+    searchName: regionHint && parts.length > 1 ? parts.slice(0, -1).join(' ') : normalized,
+    regionHint,
+  }
+}
+
+function isWarmSeason(latitude: number) {
+  const month = new Date().getMonth()
+  const northernWarmSeason = month >= 4 && month <= 8
+
+  return latitude >= 0 ? northernWarmSeason : !northernWarmSeason
+}
+
+function getComfortThresholds(latitude: number) {
+  const warmSeason = isWarmSeason(latitude)
+  const absLatitude = Math.abs(latitude)
+
+  if (warmSeason) {
+    if (absLatitude < 28) return { coldAt: 58, niceMin: 68, niceMax: 90, hotAt: 95 }
+    if (absLatitude < 36) return { coldAt: 54, niceMin: 64, niceMax: 88, hotAt: 92 }
+    return { coldAt: 52, niceMin: 62, niceMax: 84, hotAt: 89 }
+  }
+
+  if (absLatitude < 28) return { coldAt: 55, niceMin: 66, niceMax: 84, hotAt: 90 }
+  if (absLatitude < 36) return { coldAt: 38, niceMin: 56, niceMax: 76, hotAt: 82 }
+  return { coldAt: 28, niceMin: 46, niceMax: 68, hotAt: 78 }
+}
+
+function getWeatherMood(code: number, feelsLike: number, high: number, low: number, windSpeed: number, precipitation: number, latitude: number): WeatherMood {
+  const comfort = getComfortThresholds(latitude)
+  const hasRainOrSnow = precipitation > 0.02 || (code >= 61 && code < 90)
+  const hasDrizzle = code >= 51 && code < 60
+  const hasThunder = code >= 95
+  const isWindy = windSpeed >= 25
+  const isBreezy = windSpeed >= 18
+  const isTooCold = feelsLike <= comfort.coldAt
+  const isTooHot = feelsLike >= comfort.hotAt
+  const dayGetsTooCold = low <= comfort.coldAt
+  const dayGetsTooHot = high >= comfort.hotAt
+  const isNiceTemp = feelsLike >= comfort.niceMin && feelsLike <= comfort.niceMax
+  const isNiceDay = high <= comfort.hotAt - 1 && low >= comfort.coldAt + 2
+  const isOkaySky = code <= 3 || code === 45 || code === 48
+
+  if (hasThunder || hasRainOrSnow || isWindy || isTooCold || isTooHot) return 'bad'
+  if ((dayGetsTooHot || dayGetsTooCold) && !isNiceTemp) return 'bad'
+  if (isNiceTemp && isNiceDay && isOkaySky && !hasDrizzle && !isBreezy) return 'good'
   return 'mixed'
 }
 
@@ -139,9 +189,10 @@ async function getLocationName(latitude: number, longitude: number): Promise<Loc
 }
 
 async function searchLocation(query: string): Promise<NamedLocation> {
+  const { searchName, regionHint } = parseLocationQuery(query)
   const params = new URLSearchParams({
-    name: query,
-    count: '1',
+    name: searchName,
+    count: '10',
     language: 'en',
     format: 'json',
   })
@@ -153,7 +204,10 @@ async function searchLocation(query: string): Promise<NamedLocation> {
   }
 
   const data = await response.json()
-  const place = data.results?.[0]
+  const places = data.results ?? []
+  const place = regionHint
+    ? places.find((result: { admin1?: string; country_code?: string }) => result.admin1 === regionHint && result.country_code === 'US') ?? places[0]
+    : places[0]
 
   if (!place) {
     throw new Error('No matching location found. Try a city name like Tokyo or Miami.')
@@ -173,6 +227,8 @@ async function getWeather(latitude: number, longitude: number, knownLocation?: L
     latitude: String(latitude),
     longitude: String(longitude),
     current: 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation',
+    daily: 'temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min',
+    forecast_days: '1',
     temperature_unit: 'fahrenheit',
     wind_speed_unit: 'mph',
     precipitation_unit: 'inch',
@@ -189,14 +245,20 @@ async function getWeather(latitude: number, longitude: number, knownLocation?: L
 
   const data = await weatherResponse.json()
   const current = data.current
+  const daily = data.daily
   const code = Number(current.weather_code)
   const temperature = Math.round(Number(current.temperature_2m))
+  const feelsLike = Math.round(Number(current.apparent_temperature))
+  const high = Math.round(Number(daily?.apparent_temperature_max?.[0] ?? daily?.temperature_2m_max?.[0] ?? temperature))
+  const low = Math.round(Number(daily?.apparent_temperature_min?.[0] ?? daily?.temperature_2m_min?.[0] ?? temperature))
   const windSpeed = Math.round(Number(current.wind_speed_10m))
   const precipitation = Number(current.precipitation)
 
   return {
     temperature,
-    feelsLike: Math.round(Number(current.apparent_temperature)),
+    feelsLike,
+    high,
+    low,
     windSpeed,
     precipitation,
     code,
@@ -206,7 +268,7 @@ async function getWeather(latitude: number, longitude: number, knownLocation?: L
     city: location.city,
     region: location.region,
     country: location.country,
-    mood: getWeatherMood(code, temperature, windSpeed, precipitation),
+    mood: getWeatherMood(code, feelsLike, high, low, windSpeed, precipitation, latitude),
   }
 }
 
@@ -419,6 +481,10 @@ function App() {
               <dd>{weather.feelsLike}°F</dd>
             </div>
             <div>
+              <dt>High / low</dt>
+              <dd>{weather.high}° / {weather.low}°</dd>
+            </div>
+            <div>
               <dt>Wind</dt>
               <dd>{weather.windSpeed} mph</dd>
             </div>
@@ -445,14 +511,16 @@ function App() {
       )}
 
       {showMemelordPopup && (
-        <div className="memelord-popup" role="dialog" aria-modal="false" aria-labelledby="memelord-popup-title">
-          <button type="button" className="memelord-popup-close" onClick={() => setShowMemelordPopup(false)} aria-label="Close Memelord popup">
-            ×
-          </button>
-          <p id="memelord-popup-title">Want to make more memes?</p>
-          <a href="https://www.memelord.com" target="_blank" rel="noreferrer">
-            Go to Memelord
-          </a>
+        <div className="memelord-popup-backdrop" role="presentation">
+          <div className="memelord-popup" role="dialog" aria-modal="true" aria-labelledby="memelord-popup-title">
+            <button type="button" className="memelord-popup-close" onClick={() => setShowMemelordPopup(false)} aria-label="Close Memelord popup">
+              ×
+            </button>
+            <p id="memelord-popup-title">Want to make more memes?</p>
+            <a href="https://www.memelord.com" target="_blank" rel="noreferrer">
+              Go to Memelord
+            </a>
+          </div>
         </div>
       )}
 

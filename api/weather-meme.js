@@ -14,7 +14,9 @@ function buildPrompt(weather) {
   const location = [weather.city, weather.region].filter(Boolean).join(', ')
   const reaction = getWeatherReaction(weather.mood)
 
-  return `A funny meme about ${location || "the user's city"} weather. Current forecast: ${weather.temperature} degrees Fahrenheit, feels like ${weather.feelsLike} degrees Fahrenheit, ${weather.summary}, wind ${weather.windSpeed} mph, precipitation ${weather.precipitation} inches. Overall weather judgment: ${weather.mood}. Make the meme ${reaction}. Use the city/location context as part of the joke, not just generic weather. Important text rendering rule: do not use the degree symbol, the Fahrenheit symbol, or special temperature characters in the meme caption; write temperatures as "${weather.temperature} degrees" or "${weather.temperature} degrees Fahrenheit" instead. Keep it relatable, internet-native, and caption-forward.`
+  const dailyRange = weather.high && weather.low ? ` Today's range: high ${weather.high} degrees Fahrenheit, low ${weather.low} degrees Fahrenheit.` : ''
+
+  return `A funny meme about ${location || "the user's city"} weather. Current forecast: ${weather.temperature} degrees Fahrenheit, feels like ${weather.feelsLike} degrees Fahrenheit, ${weather.summary}, wind ${weather.windSpeed} mph, precipitation ${weather.precipitation} inches.${dailyRange} Overall weather judgment: ${weather.mood}. Make the meme ${reaction}. Use the city/location context as part of the joke, not just generic weather. Important text rendering rule: do not use the degree symbol, the Fahrenheit symbol, or special temperature characters in the meme caption; write temperatures as "${weather.temperature} degrees" or "${weather.temperature} degrees Fahrenheit" instead. Keep it relatable, internet-native, and caption-forward.`
 }
 
 export default async function handler(request, response) {

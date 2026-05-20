@@ -6,6 +6,8 @@ type WeatherMood = 'good' | 'bad' | 'mixed'
 type WeatherSnapshot = {
   temperature: number
   feelsLike: number
+  high?: number
+  low?: number
   windSpeed: number
   precipitation: number
   summary: string
@@ -72,7 +74,8 @@ function weatherMemeApi(): Plugin {
                 ? 'reacting like the weather is personally ruining the day and the city deserves a roast'
                 : 'reacting like the forecast is confusing, suspicious, and impossible to dress for'
 
-          const prompt = `A funny meme about ${location || 'the user\'s city'} weather. Current forecast: ${weather.temperature} degrees Fahrenheit, feels like ${weather.feelsLike} degrees Fahrenheit, ${weather.summary}, wind ${weather.windSpeed} mph, precipitation ${weather.precipitation} inches. Overall weather judgment: ${weather.mood}. Make the meme ${reaction}. Use the city/location context as part of the joke, not just generic weather. Important text rendering rule: do not use the degree symbol, the Fahrenheit symbol, or special temperature characters in the meme caption; write temperatures as "${weather.temperature} degrees" or "${weather.temperature} degrees Fahrenheit" instead. Keep it relatable, internet-native, and caption-forward.`
+          const dailyRange = weather.high && weather.low ? ` Today's range: high ${weather.high} degrees Fahrenheit, low ${weather.low} degrees Fahrenheit.` : ''
+          const prompt = `A funny meme about ${location || 'the user\'s city'} weather. Current forecast: ${weather.temperature} degrees Fahrenheit, feels like ${weather.feelsLike} degrees Fahrenheit, ${weather.summary}, wind ${weather.windSpeed} mph, precipitation ${weather.precipitation} inches.${dailyRange} Overall weather judgment: ${weather.mood}. Make the meme ${reaction}. Use the city/location context as part of the joke, not just generic weather. Important text rendering rule: do not use the degree symbol, the Fahrenheit symbol, or special temperature characters in the meme caption; write temperatures as "${weather.temperature} degrees" or "${weather.temperature} degrees Fahrenheit" instead. Keep it relatable, internet-native, and caption-forward.`
 
           const response = await fetch('https://www.memelord.com/api/v1/ai-meme', {
             method: 'POST',
