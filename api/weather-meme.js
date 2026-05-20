@@ -49,7 +49,7 @@ export default async function handler(request, response) {
       body: JSON.stringify({
         prompt,
         count: 1,
-        include_nsfw: false,
+        include_nsfw: true,
       }),
     })
 

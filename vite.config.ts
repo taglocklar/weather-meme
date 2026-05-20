@@ -83,7 +83,7 @@ function weatherMemeApi(): Plugin {
             body: JSON.stringify({
               prompt,
               count: 1,
-              include_nsfw: false,
+              include_nsfw: true,
             }),
           })
 

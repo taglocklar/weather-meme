@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 import './App.css'
 
 type WeatherMood = 'good' | 'bad' | 'mixed'
@@ -42,6 +42,7 @@ type NamedLocation = LocationSnapshot & {
 }
 
 type ProgressStep = 'idle' | 'location' | 'weather' | 'meme'
+type ActiveAction = 'place' | 'current' | null
 
 const weatherCodeLabels: Record<number, string> = {
   0: 'clear sky',
@@ -232,12 +233,25 @@ function App() {
   const [status, setStatus] = useState('Use your weather or pick a city.')
   const [isLoading, setIsLoading] = useState(false)
   const [progressStep, setProgressStep] = useState<ProgressStep>('idle')
+  const [activeAction, setActiveAction] = useState<ActiveAction>(null)
   const [locationQuery, setLocationQuery] = useState('')
+  const [showMemelordPopup, setShowMemelordPopup] = useState(false)
 
   function resetMemeState() {
     setMeme(null)
     setPrompt('')
+    setShowMemelordPopup(false)
   }
+
+  useEffect(() => {
+    if (!meme) return
+
+    const popupTimer = window.setTimeout(() => {
+      setShowMemelordPopup(true)
+    }, 2400)
+
+    return () => window.clearTimeout(popupTimer)
+  }, [meme])
 
   async function finishMeme(snapshot: WeatherSnapshot) {
     setWeather(snapshot)
@@ -259,6 +273,7 @@ function App() {
     }
 
     setIsLoading(true)
+    setActiveAction('current')
     setProgressStep('location')
     resetMemeState()
     setStatus('Finding your local sky vibes...')
@@ -274,6 +289,7 @@ function App() {
       setStatus(error instanceof Error ? error.message : 'Something went wrong.')
     } finally {
       setIsLoading(false)
+      setActiveAction(null)
       setProgressStep('idle')
     }
   }
@@ -288,6 +304,7 @@ function App() {
     }
 
     setIsLoading(true)
+    setActiveAction('place')
     setProgressStep('location')
     resetMemeState()
     setStatus(`Finding ${query}...`)
@@ -304,6 +321,7 @@ function App() {
       setStatus(error instanceof Error ? error.message : 'Something went wrong.')
     } finally {
       setIsLoading(false)
+      setActiveAction(null)
       setProgressStep('idle')
     }
   }
@@ -343,14 +361,18 @@ function App() {
               ))}
             </datalist>
             <button type="submit" disabled={isLoading}>
-              {isLoading ? 'Working...' : 'Meme this place'}
+              {activeAction === 'place' ? 'Making city meme...' : 'Meme this place'}
             </button>
           </div>
+          <div className="action-divider" aria-hidden="true">
+            <span />
+            <em>or</em>
+            <span />
+          </div>
+          <button type="button" className="current-location-button" onClick={handleGenerate} disabled={isLoading}>
+            {activeAction === 'current' ? 'Finding your weather...' : 'Use my weather ✨'}
+          </button>
         </form>
-
-        <button type="button" className="current-location-button" onClick={handleGenerate} disabled={isLoading}>
-          {isLoading ? 'Consulting the weather orb...' : 'Use my weather ✨'}
-        </button>
 
         <p className="status" role="status">
           {status}
@@ -422,6 +444,18 @@ function App() {
         </figure>
       )}
 
+      {showMemelordPopup && (
+        <div className="memelord-popup" role="dialog" aria-modal="false" aria-labelledby="memelord-popup-title">
+          <button type="button" className="memelord-popup-close" onClick={() => setShowMemelordPopup(false)} aria-label="Close Memelord popup">
+            ×
+          </button>
+          <p id="memelord-popup-title">Want to make more memes?</p>
+          <a href="https://www.memelord.com" target="_blank" rel="noreferrer">
+            Go to Memelord
+          </a>
+        </div>
+      )}
+
       <a className="memelord-powered-stamp" href="https://www.memelord.com" target="_blank" rel="noreferrer">
         <span className="stamp-copy">
           <span className="stamp-ribbon">Another web site powered by</span>
@@ -433,4 +467,5 @@ function App() {
 }
 
 export default App
+
 
