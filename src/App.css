@@ -5,14 +5,6 @@
   padding: 54px 0;
 }
 
-.logo {
-  display: block;
-  width: min(300px, 68vw);
-  height: auto;
-  margin-bottom: 38px;
-  filter: drop-shadow(0 8px 14px rgba(38, 144, 255, 0.14));
-}
-
 .glass-panel,
 .weather-card,
 .result,

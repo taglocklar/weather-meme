@@ -318,12 +318,10 @@ function App() {
       <div className="emoji-cloud emoji-cloud-three" aria-hidden="true">🌈</div>
 
       <section className="glass-panel" aria-labelledby="page-title">
-        <img className="logo" src="/brand/memelord.svg" alt="Memelord" />
-
         <p className="eyebrow">How&apos;s the weather? 🐠</p>
         <h1 id="page-title">Your city&apos;s forecast becomes a meme.</h1>
         <p className="lede">
-          Use your location or pick any city. We check the weather, judge the vibes, then make a Memelord reaction meme.
+          Use your location or pick any city. We check the weather, judge the vibes, then make a reaction meme.
         </p>
 
         <form className="location-form" onSubmit={handleLocationSubmit}>
